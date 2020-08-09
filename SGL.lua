@@ -172,7 +172,8 @@ end
 
 function SGL.Draw.Pixel (x, y, color)
 
-  x = math.floor (x), y = math.floor (y)
+  x = math.floor (x)
+  y = math.floor (y)
 
   if x <= Resolution.x and x >= 1 and y <= Resolution.y and y >= 1 then
 
