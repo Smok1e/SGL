@@ -145,15 +145,13 @@ end
 
 function SGL.Display ()
 
-  print ("maad")
-
   for x = 1, Resolution.x do
 
     for y = 1, Resolution.y do
 
       if Buffer[x][y] ~= ScreenBuffer[x][y] then
 
-        print ("asda")
+        print ("maasdam")
 
         SGL.Gpu.setBackground (Buffer[x][y].background)
         SGL.Gpu.setForeground (Buffer[x][y].foreground)
