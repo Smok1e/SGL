@@ -253,12 +253,14 @@ function SGL.init ()
   for x = 1, Resolution.x do
 
     ScreenBuffer[x] = {}
+    Buffer      [x] = {}
 
     for y = 1, Resolution.y do
 
       local char, foreground, background = gpu.get (x, y)
 
       ScreenBuffer[x][y] = {char = char, background = background, foreground = foreground}
+      Buffer      [x][y] = {char = char, background = background, foreground = foreground}
 
     end
 
