@@ -1,4 +1,5 @@
 local component = require ("component")
+local io = require ("io")
 local gpu = component.gpu
 
 --------------------------------------------------------------------------------
@@ -149,12 +150,16 @@ function SGL.Display ()
 
     for y = 1, Resolution.y do
 
-      if Buffer[x][y] ~= ScreenBuffer[x][y] then
+      local s, b = ScreenBuffer[x][y], Buffer[x][y]
 
-        SGL.Gpu.setBackground (Buffer[x][y].background)
-        SGL.Gpu.setForeground (Buffer[x][y].foreground)
+      if s.background ~= b.background or 
+         s.foreground ~= b.foreground or 
+         s.char       ~= b.char then 
 
-        gpu.set (x, y, Buffer[x][y].char)
+        SGL.Gpu.setBackground (b.background)
+        SGL.Gpu.setForeground (b.foreground)
+
+        gpu.set (x, y, " ")
 
       end
 
@@ -162,17 +167,19 @@ function SGL.Display ()
 
   end
 
-  for x = 1, Resolution.y do
+  for x = 1, Resolution.x do
 
     for y = 1, Resolution.y do
 
-      ScreenBuffer[x][y] = Buffer[x][y]
+      ScreenBuffer[x][y].background = Buffer[x][y].background
+      ScreenBuffer[x][y].foreground = Buffer[x][y].foreground
+      ScreenBuffer[x][y].char       = Buffer[x][y].char
 
     end
 
   end
 
-  return true;
+  return true
 
 end
 
@@ -201,11 +208,11 @@ end
 
 function SGL.Draw.Rect (x, y, w, h, color)
 
-  for x_ = 1, x do
+  for x_ = 0, w do
 
-    for y_ = 1, y do
+    for y_ = 0, h do
 
-      SGL.Draw.Pixel (x_, y_, color)
+      SGL.Draw.Pixel (x + x_, y + y_, color)
 
     end
 
@@ -247,7 +254,7 @@ function SGL.Draw.Circle (x, y, r, color, circlestep, linestep)
 
   for A = 0, math.pi * 2, math.pi / circlestep do
 
-    SGL.Draw.Line (x, y, x + math.sin (A) * r, y + math.cos (A) * r, color, linestep)
+    SGL.Draw.Line (x, y, x + math.sin (A) * r * 2, y + math.cos (A) * r, color, linestep)
 
   end
 
