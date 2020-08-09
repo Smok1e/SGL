@@ -145,6 +145,8 @@ end
 
 function SGL.Display ()
 
+  print ("maad")
+
   for x = 1, Resolution.x do
 
     for y = 1, Resolution.y do
