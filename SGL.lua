@@ -3,15 +3,19 @@ local gpu = component.gpu
 
 --------------------------------------------------------------------------------
 
-local SGL = {Draw = {}}
+local SGL = {Draw = {}, Gpu = {}}
 
 local Background, Foreground
 
 local Resolution = {}
 
+local Buffer = {}
+
+local ScreenBuffer = {}
+
 --------------------------------------------------------------------------------
 
-function SGL.setGpuAddress (address)
+function SGL.Gpu.setGpuAddress (address)
 
   local proxy = component.proxy (address)
 
@@ -33,7 +37,7 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.bindScreen (address)
+function SGL.Gpu.bindScreen (address)
 
   return gpu.bind (address)
 
@@ -41,7 +45,7 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.setBackground (color)
+function SGL.Gpu.setBackground (color)
 
   if color ~= Background then
 
@@ -65,7 +69,7 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.setForeground (color)
+function SGL.Gpu.setForeground (color)
 
   if color ~= Foreground then
 
@@ -89,7 +93,7 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.getBackground ()
+function SGL.Gpu.getBackground ()
 
   return Background
 
@@ -97,7 +101,7 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.getForeground ()
+function SGL.Gpu.getForeground ()
 
   return Foreground
 
@@ -105,7 +109,7 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.setResolution (x, y)
+function SGL.Gpu.setResolution (x, y)
 
   if Resolution.x == x and Resolution.y == y then
 
@@ -125,7 +129,7 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.getResolution ()
+function SGL.Gpu.getResolution ()
 
   return Resolution.x, Resolution.y
 
@@ -141,13 +145,36 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.Draw.Pixel (x, y, color)
+function SGL.Display ()
 
-  if color then SGL.setBackground (color) end
+  for x = 1, Resolution.x do
+
+    for y = 1, Resolution.y do
+
+      if Buffer[x][y] ~= ScreenBuffer[x][y] then
+
+        SGL.Gpu.setBackground (Buffer[x][y].background)
+        SGL.Gpu.setForeground (Buffer[x][y].foreground)
+
+        gpu.set (x, y, Buffer[x][y].char)
+
+      end
+
+    end
+
+  end
+
+  ScreenBuffer = Buffer
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Draw.Pixel (x, y, color)
 
   if x <= Resolution.x and x >= 1 and y <= Resolution.y and y >= 1 then
 
-    gpu.set (x, y, " ")
+    Buffer[x][y] = {background = color, foreground = 0, char = " "}
 
     return true
 
@@ -163,9 +190,15 @@ end
 
 function SGL.Draw.Rect (x, y, w, h, color)
 
-  if color then SGL.setBackground (color) end
+  for x_ = 1, x do
 
-  gpu.fill (x, y, w, h, " ")
+    for y_ = 1, y do
+
+      SGL.Draw.Pixel (x_, y_, color)
+
+    end
+
+  end
 
   return true
 
@@ -176,9 +209,7 @@ end
 function SGL.Draw.Line (x1, y1, x2, y2, color, step)
 
   local step = step or 0.5
-
-  if color then SGL.setBackground (color) end
-
+  
   local a, b = x2 - x1, y2 - y1
 
   local c = math.sqrt (a * a + b * b)
@@ -189,7 +220,7 @@ function SGL.Draw.Line (x1, y1, x2, y2, color, step)
 
     local x, y = x1 + i * vx, y1 + i * vy
 
-    SGL.Draw.Pixel (x, y)
+    SGL.Draw.Pixel (x, y, color)
 
   end
 
@@ -218,6 +249,20 @@ function SGL.init ()
   Background, Foreground = gpu.getBackground (), gpu.getForeground ()
 
   Resolution.x, Resolution.y = gpu.getResolution ()
+
+  for x = 1, Resolution.x do
+
+    for y = 1, Resolution.y do
+
+      local char, foreground, background = gpu.get (x, y)
+
+      ScreenBuffer[x][y] = {char = char, background = background, foreground = foreground}
+
+    end
+
+  end
+
+  Buffer = ScreenBuffer
 
 end
 
