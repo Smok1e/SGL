@@ -209,7 +209,7 @@ end
 function SGL.Draw.Line (x1, y1, x2, y2, color, step)
 
   local step = step or 0.5
-  
+
   local a, b = x2 - x1, y2 - y1
 
   local c = math.sqrt (a * a + b * b)
@@ -251,6 +251,8 @@ function SGL.init ()
   Resolution.x, Resolution.y = gpu.getResolution ()
 
   for x = 1, Resolution.x do
+
+    ScreenBuffer[x] = {}
 
     for y = 1, Resolution.y do
 
