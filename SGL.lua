@@ -6,11 +6,9 @@ local gpu = component.gpu
 local SGL = {Draw = {}, Gpu = {}}
 
 local Background, Foreground
-
 local Resolution = {}
 
 local Buffer = {}
-
 local ScreenBuffer = {}
 
 --------------------------------------------------------------------------------
@@ -166,11 +164,15 @@ function SGL.Display ()
 
   ScreenBuffer = Buffer
 
+  return true;
+
 end
 
 --------------------------------------------------------------------------------
 
 function SGL.Draw.Pixel (x, y, color)
+
+  x = math.floor (x), y = math.floor (y)
 
   if x <= Resolution.x and x >= 1 and y <= Resolution.y and y >= 1 then
 
