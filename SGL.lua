@@ -151,6 +151,8 @@ function SGL.Display ()
 
       if Buffer[x][y] ~= ScreenBuffer[x][y] then
 
+        print ("asda")
+
         SGL.Gpu.setBackground (Buffer[x][y].background)
         SGL.Gpu.setForeground (Buffer[x][y].foreground)
 
