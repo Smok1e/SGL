@@ -159,7 +159,7 @@ function SGL.Display ()
         SGL.Gpu.setBackground (b.background)
         SGL.Gpu.setForeground (b.foreground)
 
-        gpu.set (x, y, " ")
+        gpu.set (x, y, b.char)
 
       end
 
@@ -185,14 +185,16 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.Draw.Pixel (x, y, color)
+function SGL.Draw.Character (x, y, char, background, foreground)
 
   x = math.floor (x)
   y = math.floor (y)
 
   if x <= Resolution.x and x >= 1 and y <= Resolution.y and y >= 1 then
 
-    Buffer[x][y] = {background = color, foreground = 0, char = " "}
+    Buffer[x][y].background = background
+    Buffer[x][y].foreground = foreground
+    Buffer[x][y].char       = char
 
     return true
 
@@ -201,6 +203,14 @@ function SGL.Draw.Pixel (x, y, color)
     return false
 
   end
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Draw.Pixel (x, y, color)
+
+  return SGL.Draw.Character (x, y, " ", color, 0)
 
 end
 
@@ -257,6 +267,22 @@ function SGL.Draw.Circle (x, y, r, color, circlestep, linestep)
     SGL.Draw.Line (x, y, x + math.sin (A) * r * 2, y + math.cos (A) * r, color, linestep)
 
   end
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Draw.Text (x, y, text, background, foreground)
+
+  for i = 1, #text do
+
+    local char = string.sub (text, i, i)
+
+    SGL.Draw.Character (x + i - 1, y, char, background, foreground)
+
+  end
+
+  return true
 
 end
 
