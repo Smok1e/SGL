@@ -164,7 +164,15 @@ function SGL.Display ()
 
   end
 
-  ScreenBuffer = Buffer
+  for x = 1, Resolution.y do
+
+    for y = 1, Resolution.y do
+
+      ScreenBuffer[x][y] = Buffer[x][y]
+
+    end
+
+  end
 
   return true;
 
