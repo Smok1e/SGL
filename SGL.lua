@@ -1,10 +1,12 @@
 local component = require ("component")
-local gpu = component.gpu
 local computer = require ("computer")
+local io = require ("io")
+
+local gpu = component.gpu
 
 --------------------------------------------------------------------------------
 
-local SGL = {Draw = {}, Gpu = {}}
+local SGL = {Draw = {}, Gpu = {}, Debug = {}}
 
 local Background, Foreground
 local Resolution = {}
@@ -16,6 +18,12 @@ local DoubleBuffering = true
 
 local LastDisplayTime = 0
 
+local StartTime = computer.uptime ()
+
+--------------------------------------------------------------------------------
+
+local ALLOW_TRACE = true
+
 --------------------------------------------------------------------------------
 
 function SGL.SyncScreenBuffer ()
@@ -26,7 +34,7 @@ function SGL.SyncScreenBuffer ()
 
       local char, background, foreground = gpu.get (x, y)
 
-      ScreenBuffer[x][y] = {background = background, foreground = foreground, char = char}
+      ScreenBuffer[x][y] = {background, foreground, char}
 
     end
 
@@ -226,6 +234,8 @@ end
 
 function SGL.Display ()
 
+  SGL.Debug.DumpFreeMemory ()
+
   local uptime = computer.uptime ()
 
   for x = 1, Resolution.x do
@@ -236,18 +246,18 @@ function SGL.Display ()
 
         local s, b = ScreenBuffer[x][y], Buffer[x][y]
 
-        if s.background ~= b.background or 
-           s.foreground ~= b.foreground or 
-           s.char       ~= b.char then 
+        if s[1] ~= b[1] or 
+           s[2] ~= b[2] or 
+           s[3] ~= b[3] then 
 
-          SGL.Gpu.setBackground (b.background)
-          SGL.Gpu.setForeground (b.foreground)
+          SGL.Gpu.setBackground (b[1])
+          SGL.Gpu.setForeground (b[2])
 
-          gpu.set (x, y, b.char)
+          gpu.set (x, y, b[3])
 
-          s.background = b.background
-          s.foreground = b.foreground
-          s.char       = b.char
+          s[1] = b[1]
+          s[2] = b[2]
+          s[3] = b[3]
 
         end
 
@@ -255,10 +265,10 @@ function SGL.Display ()
 
         local b = Buffer[x][y]
 
-        SGL.Gpu.setBackground (b.background)
-        SGL.Gpu.setForeground (b.foreground)
+        SGL.Gpu.setBackground (b[1])
+        SGL.Gpu.setForeground (b[2])
 
-        gpu.set (x, y, b.char)
+        gpu.set (x, y, b[3])
 
       end
 
@@ -274,6 +284,22 @@ end
 
 --------------------------------------------------------------------------------
 
+function SGL.getCharacterFromBuffer (x, y)
+
+  return {background = Buffer[x][y][1], foreground = Buffer[x][y][2], char = Buffer[x][y][3]}
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.getCharacterFromScreen (x, y)
+
+  return {background = Buffer[x][y][1], foreground = Buffer[x][y][2], char = Buffer[x][y][3]}
+
+end
+
+--------------------------------------------------------------------------------
+
 function SGL.Draw.Character (x, y, char, background, foreground)
 
   x = math.floor (x)
@@ -281,9 +307,9 @@ function SGL.Draw.Character (x, y, char, background, foreground)
 
   if x <= Resolution.x and x >= 1 and y <= Resolution.y and y >= 1 then
 
-    Buffer[x][y].background = background
-    Buffer[x][y].foreground = foreground
-    Buffer[x][y].char       = char
+    Buffer[x][y][1] = background
+    Buffer[x][y][2] = foreground
+    Buffer[x][y][3] = char
 
     return true
 
@@ -306,6 +332,8 @@ end
 --------------------------------------------------------------------------------
 
 function SGL.Draw.Rect (x, y, w, h, color)
+
+  SGL.Debug.DumpFreeMemory ()
 
   for x_ = 0, w - 1 do
 
@@ -377,13 +405,51 @@ end
 
 --------------------------------------------------------------------------------
 
+function SGL.Debug.DumpFreeMemory (message)
+
+  if ALLOW_TRACE then
+
+    local info = debug.getinfo (3)
+  
+    local line, funcname = info.currentline, info.name
+
+    local file = io.open ("/SGLMemoryLog.log", "a")
+
+    file:write ("[" .. computer.uptime () - StartTime .. "] in function '" .. funcname .. "' [line " .. line .. "]: " .. computer.freeMemory ())
+
+    if message then
+
+      file:write (" '" .. message .. "'")
+
+    end
+
+    file:write ("\n")
+
+    file:close ()
+
+    return true
+
+  else
+
+    return false
+
+  end
+
+end
+
+--------------------------------------------------------------------------------
+
 function SGL.init ()
+
+  SGL.Debug.DumpFreeMemory ()
 
   Background, Foreground = gpu.getBackground (), gpu.getForeground ()
 
   Resolution.x, Resolution.y = gpu.getResolution ()
 
   for x = 1, Resolution.x do
+
+    SGL.Debug.DumpFreeMemory ("x = " .. x)
 
     ScreenBuffer[x] = {}
     Buffer      [x] = {}
@@ -392,8 +458,8 @@ function SGL.init ()
 
       local char, foreground, background = gpu.get (x, y)
 
-      ScreenBuffer[x][y] = {char = char, background = background, foreground = foreground}
-      Buffer      [x][y] = {char = char, background = background, foreground = foreground}
+      ScreenBuffer[x][y] = {background, foreground, char}
+      Buffer      [x][y] = {background, foreground, char}
 
     end
 
@@ -402,7 +468,5 @@ function SGL.init ()
 end
 
 --------------------------------------------------------------------------------
-
-SGL.init ()
 
 return SGL
