@@ -1,6 +1,6 @@
 local component = require ("component")
-local io = require ("io")
 local gpu = component.gpu
+local computer = require ("computer")
 
 --------------------------------------------------------------------------------
 
@@ -11,6 +11,30 @@ local Resolution = {}
 
 local Buffer = {}
 local ScreenBuffer = {}
+
+local DoubleBuffering = true
+
+local LastDisplayTime = 0
+
+--------------------------------------------------------------------------------
+
+function SGL.SyncScreenBuffer ()
+
+  for x = 1, Resolution.x do
+
+    for y = 1, Resolution.y do
+
+      local char, background, foreground = gpu.get (x, y)
+
+      ScreenBuffer[x][y] = {background = background, foreground = foreground, char = char}
+
+    end
+
+  end
+
+  return true
+
+end
 
 --------------------------------------------------------------------------------
 
@@ -136,6 +160,50 @@ end
 
 --------------------------------------------------------------------------------
 
+function SGL.setDoubleBufferingEnabled (enable)
+
+  if DoubleBuffering ~= enable then
+
+    DoubleBuffering = enable
+
+    SGL.SyncScreenBuffer ()
+
+    return true
+
+  else
+
+    return false
+
+  end
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.isDoubleBufferingEnabled ()
+
+  return DoubleBuffering
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Wait (timeout)
+
+  timeout = timeout or 0
+
+  local uptime = computer.uptime ()
+
+  while computer.uptime (timeout) - uptime < timeout do
+
+    computer.pullSignal (0)
+
+  end
+
+end
+
+--------------------------------------------------------------------------------
+
 function SGL.Clear (color)
 
   SGL.Draw.Rect (1, 1, Resolution.x, Resolution.y, color)
@@ -144,17 +212,48 @@ end
 
 --------------------------------------------------------------------------------
 
+function SGL.getDisplayTime ()
+
+  local DisplayTime = math.floor (LastDisplayTime * 100) / 100
+
+  if DisplayTime <= 0 then DisplayTime = 0.01 end
+
+  return DisplayTime
+
+end
+
+--------------------------------------------------------------------------------
+
 function SGL.Display ()
+
+  local uptime = computer.uptime ()
 
   for x = 1, Resolution.x do
 
     for y = 1, Resolution.y do
 
-      local s, b = ScreenBuffer[x][y], Buffer[x][y]
+      if DoubleBuffering then
 
-      if s.background ~= b.background or 
-         s.foreground ~= b.foreground or 
-         s.char       ~= b.char then 
+        local s, b = ScreenBuffer[x][y], Buffer[x][y]
+
+        if s.background ~= b.background or 
+           s.foreground ~= b.foreground or 
+           s.char       ~= b.char then 
+
+          SGL.Gpu.setBackground (b.background)
+          SGL.Gpu.setForeground (b.foreground)
+
+          gpu.set (x, y, b.char)
+
+          s.background = b.background
+          s.foreground = b.foreground
+          s.char       = b.char
+
+        end
+
+      else
+
+        local b = Buffer[x][y]
 
         SGL.Gpu.setBackground (b.background)
         SGL.Gpu.setForeground (b.foreground)
@@ -167,17 +266,7 @@ function SGL.Display ()
 
   end
 
-  for x = 1, Resolution.x do
-
-    for y = 1, Resolution.y do
-
-      ScreenBuffer[x][y].background = Buffer[x][y].background
-      ScreenBuffer[x][y].foreground = Buffer[x][y].foreground
-      ScreenBuffer[x][y].char       = Buffer[x][y].char
-
-    end
-
-  end
+  LastDisplayTime = computer.uptime () - uptime
 
   return true
 
@@ -218,9 +307,9 @@ end
 
 function SGL.Draw.Rect (x, y, w, h, color)
 
-  for x_ = 0, w do
+  for x_ = 0, w - 1 do
 
-    for y_ = 0, h do
+    for y_ = 0, h - 1 do
 
       SGL.Draw.Pixel (x + x_, y + y_, color)
 
