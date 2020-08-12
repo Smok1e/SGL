@@ -6,7 +6,7 @@ local gpu = component.gpu
 
 --------------------------------------------------------------------------------
 
-local SGL = {Draw = {}, Gpu = {}, Debug = {}}
+local SGL = {Draw = {}, Gpu = {}, Debug = {}, Color = {}}
 
 local Background, Foreground
 local Resolution = {}
@@ -22,11 +22,11 @@ local StartTime = computer.uptime ()
 
 --------------------------------------------------------------------------------
 
-local ALLOW_TRACE = true
+local ALLOW_TRACE = false
 
 --------------------------------------------------------------------------------
 
-function SGL.SyncScreenBuffer ()
+function SGL.syncScreenBuffer ()
 
   for x = 1, Resolution.x do
 
@@ -152,6 +152,8 @@ function SGL.Gpu.setResolution (x, y)
 
     gpu.setResolution (x, y)
 
+    SGL.syncScreenBuffer ()
+
     return true
 
   end  
@@ -174,7 +176,7 @@ function SGL.setDoubleBufferingEnabled (enable)
 
     DoubleBuffering = enable
 
-    SGL.SyncScreenBuffer ()
+    SGL.syncScreenBuffer ()
 
     return true
 
@@ -232,6 +234,84 @@ end
 
 --------------------------------------------------------------------------------
 
+function SGL.Fill (x, y, w, h, background, foreground, char)
+
+  for x_ = 0, w - 1 do
+
+    for y_ = 0, h - 1 do
+
+      SGL.Draw.Character (x + x_, y + y_, char, background, foreground)
+
+    end
+
+  end
+
+  return true
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.isRectX (x, y)
+
+  local background, foreground, char = table.unpack (Buffer[x][y])
+
+  for i = 0, Resolution.x - x do
+
+    if Buffer[x + i][y][1] ~= background or 
+       Buffer[x + i][y][2] ~= foreground or 
+       Buffer[x + i][y][3] ~= char then 
+
+      if i == 1 then 
+
+        return false 
+
+      else 
+
+        return i
+
+      end
+
+    end
+
+  end
+
+  return Resolution.x - x + 1
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.isRectY (x, y)
+
+  local background, foreground, char = table.unpack (Buffer[x][y])
+
+  for i = 0, Resolution.y - y do
+
+    if Buffer[x][y + i][1] ~= background or 
+       Buffer[x][y + i][2] ~= foreground or 
+       Buffer[x][y + i][3] ~= char then 
+
+      if i == 1 then 
+
+        return false 
+
+      else 
+
+        return i
+
+      end
+
+    end
+
+  end
+
+  return Resolution.y - y + 1
+
+end
+
+--------------------------------------------------------------------------------
+
 function SGL.Display ()
 
   SGL.Debug.DumpFreeMemory ()
@@ -244,7 +324,7 @@ function SGL.Display ()
 
       if DoubleBuffering then
 
-        local s, b = ScreenBuffer[x][y], Buffer[x][y]
+        local s, b = ScreenBuffer[x][y], Buffer[x][y] 
 
         if s[1] ~= b[1] or 
            s[2] ~= b[2] or 
@@ -253,7 +333,34 @@ function SGL.Display ()
           SGL.Gpu.setBackground (b[1])
           SGL.Gpu.setForeground (b[2])
 
-          gpu.set (x, y, b[3])
+          local rectwidth  = SGL.isRectX (x, y)
+          local rectheight = SGL.isRectY (x, y)
+
+          if rectwidth then
+
+            gpu.fill (x, y, rectwidth, 1, b[3])
+            
+            for i = 0, rectwidth - 1 do
+
+              ScreenBuffer[x + i][y] = {Background, Foreground, b[3]}
+
+            end
+
+          end
+
+          if rectheight then
+
+            gpu.fill (x, y, 1, rectheight, b[3])
+            
+            y = y + rectheight
+
+          end
+
+          if not rectwidth and not rectheight then
+
+            gpu.set (x, y, b[3])
+
+          end
 
           s[1] = b[1]
           s[2] = b[2]
@@ -331,21 +438,17 @@ end
 
 --------------------------------------------------------------------------------
 
+function SGL.Draw.Semipixel (x, y, topcolor, bottomcolor)
+
+  return SGL.Draw.Character (x, y, "▄", topcolor, bottomcolor)
+
+end
+
+--------------------------------------------------------------------------------
+
 function SGL.Draw.Rect (x, y, w, h, color)
 
-  SGL.Debug.DumpFreeMemory ()
-
-  for x_ = 0, w - 1 do
-
-    for y_ = 0, h - 1 do
-
-      SGL.Draw.Pixel (x + x_, y + y_, color)
-
-    end
-
-  end
-
-  return true
+  return SGL.Fill (x, y, w, h, color, 0, " ")
 
 end
 
@@ -389,7 +492,9 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.Draw.Text (x, y, text, background, foreground)
+function SGL.Draw.Text (x, y, text, background, foreground, center)
+
+  if center then x = x - #text / 2 end
 
   for i = 1, #text do
 
@@ -434,6 +539,28 @@ function SGL.Debug.DumpFreeMemory (message)
     return false
 
   end
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Color.Pack (r, g, b)
+
+  return (r *(256^2)) + (g * 256) + b
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Color.Extract (color)
+
+  color = color % 0x1000000  
+ 
+  local r = math.floor(color / 0x10000)  
+  local g = math.floor((color - r * 0x10000) / 0x100)
+  local b = color - r * 0x10000 - g * 0x100
+ 
+  return r, g, b
 
 end
 
