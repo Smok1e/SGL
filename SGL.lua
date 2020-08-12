@@ -1,3 +1,6 @@
+--Simple Graphic Library by @Smok1e--
+--https://github.com/Supchik2102/SGL
+
 local component = require ("component")
 local computer = require ("computer")
 local io = require ("io")
@@ -54,7 +57,7 @@ function SGL.Gpu.setGpuAddress (address)
 
     gpu = proxy
 
-    SGL.init ()
+    SGL.Init ()
 
     return true
 
@@ -566,7 +569,7 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.init ()
+function SGL.Init ()
 
   SGL.Debug.DumpFreeMemory ()
 
