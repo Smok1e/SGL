@@ -469,6 +469,8 @@ function SGL.Draw.Character (x, y, char, background, foreground)
 
   if x <= Resolution.x and x >= 1 and y <= Resolution.y and y >= 1 then
 
+    --тебе здесь не рады
+
     if background then Buffer[x][y][1] = background end
     if foreground then Buffer[x][y][2] = foreground end
     if char       then Buffer[x][y][3] = char       end
