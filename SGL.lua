@@ -9,7 +9,7 @@ local gpu = component.gpu
 
 --------------------------------------------------------------------------------
 
-local SGL = {Draw = {}, Gpu = {}, Debug = {}, Color = {}}
+local SGL = {Draw = {}, Gpu = {}, Debug = {}, Color = {}, Semi = {}}
 
 local Background, Foreground
 local Resolution = {}
@@ -213,6 +213,38 @@ function SGL.Wait (timeout)
 
   end
 
+  return timeout
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.WaitKey (key)
+
+  if type (key) == "char" then key = string.byte (key) end
+
+  local done = false
+
+  while not done do
+
+    local evt, _, key_ = computer.pullSignal ()
+
+    if evt == "key_down" then
+
+      if not key then 
+
+        return true 
+
+      elseif key == key_ then
+
+        return true
+
+      end
+
+    end
+
+  end
+
 end
 
 --------------------------------------------------------------------------------
@@ -220,6 +252,10 @@ end
 function SGL.Clear (color)
 
   SGL.Draw.Rect (1, 1, Resolution.x, Resolution.y, color)
+
+  SGL.Semi.Clear ()
+
+  return true
 
 end
 
@@ -250,6 +286,22 @@ function SGL.Fill (x, y, w, h, background, foreground, char)
   end
 
   return true
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Round (x)
+
+  if x % 1 > 0.5 then 
+
+    return math.ceil  (x) 
+
+  else
+    
+    return math.floor (x)
+
+  end
 
 end
 
@@ -317,9 +369,9 @@ end
 
 function SGL.Display ()
 
-  SGL.Debug.DumpFreeMemory ()
-
   local uptime = computer.uptime ()
+
+  SGL.Semi.Draw ()
 
   for x = 1, Resolution.x do
 
@@ -412,8 +464,8 @@ end
 
 function SGL.Draw.Character (x, y, char, background, foreground)
 
-  x = math.floor (x)
-  y = math.floor (y)
+  x = SGL.Round (x)
+  y = SGL.Round (y)
 
   if x <= Resolution.x and x >= 1 and y <= Resolution.y and y >= 1 then
 
@@ -483,7 +535,7 @@ end
 
 function SGL.Draw.Circle (x, y, r, color, circlestep, linestep)
 
-  local circlestep = circlestep or 16
+  local circlestep = circlestep or 64
 
   for A = 0, math.pi * 2, math.pi / circlestep do
 
@@ -569,17 +621,130 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.Init ()
+function SGL.Semi.Clear ()
 
-  SGL.Debug.DumpFreeMemory ()
+  SGL.Semi.Buffer = {}
+
+  for x = 1, Resolution.x do
+    
+    SGL.Semi.Buffer[x] = {}
+
+  end
+
+  return true
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Semi.Set (x, y, color)
+
+  x = SGL.Round (x)
+  y = SGL.Round (y)
+
+  if x <= Resolution.x and x > 0 and y <= Resolution.y * 2 and y > 0 then
+
+    SGL.Semi.Buffer[x][y] = color
+
+  end
+
+  return true
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Semi.Draw ()
+
+  local Buff = SGL.Semi.Buffer
+
+  for x = 1, Resolution.x do
+
+    for y = 1, Resolution.y * 2, 2 do
+
+      local top    = Buff[x][y    ]
+      local bottom = Buff[x][y + 1]
+
+      if top or bottom then
+
+        top =    top    or Buffer[x][math.ceil (y / 2)][1]
+        bottom = bottom or Buffer[x][math.ceil (y / 2)][1]
+
+        SGL.Draw.Semipixel (x, math.ceil (y / 2), top, bottom)
+
+      end
+
+    end
+
+  end
+
+  return true
+  
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Semi.Line (x, y, x1, y1, color, step)
+
+  step = step or 0.5
+
+  local a = x1 - x
+  local b = y1 - y
+
+  local c = math.sqrt (a ^ 2 + b ^ 2)
+
+  local vx = a / c
+  local vy = b / c
+
+  for i = 0, c, step do
+
+    SGL.Semi.Set (x + i * vx, y + vy * i, color)
+
+  end
+
+  return true
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Semi.Rect (x, y, width, height, color)
+
+  for i = 0, width do
+
+    for j = 0, height do
+
+      SGL.Semi.Set (x + i, y + j, color)
+
+    end
+
+  end
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Semi.Circle (x, y, r, color, circlestep, linestep)
+
+  local circlestep = circlestep or 64
+
+  for A = 0, math.pi * 2, math.pi / circlestep do
+
+    SGL.Semi.Line (x, y, x + math.sin (A) * r, y + math.cos (A) * r, color, linestep)
+
+  end
+
+end
+
+--------------------------------------------------------------------------------
+
+function SGL.Init ()
 
   Background, Foreground = gpu.getBackground (), gpu.getForeground ()
 
   Resolution.x, Resolution.y = gpu.getResolution ()
 
   for x = 1, Resolution.x do
-
-    SGL.Debug.DumpFreeMemory ("x = " .. x)
 
     ScreenBuffer[x] = {}
     Buffer      [x] = {}
@@ -594,6 +759,10 @@ function SGL.Init ()
     end
 
   end
+
+  SGL.Semi.Clear ()
+
+  return true
 
 end
 
