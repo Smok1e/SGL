@@ -1,6 +1,6 @@
 return {
 
-	Version = 1,
-	Changes = "Test"
+	Version = 2,
+	Changes = "Test2"
 
 }
