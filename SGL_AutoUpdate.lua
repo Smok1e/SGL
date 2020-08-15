@@ -73,6 +73,8 @@ end
 
 do
 
+  return 
+
   local version = load (getData (SGL_VERSION_URL)) ()
 
   if require ("SGL_Version").Version ~= version.Version then
