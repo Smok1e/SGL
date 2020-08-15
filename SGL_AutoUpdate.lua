@@ -90,8 +90,8 @@ do
   local message1 = "SGL was updated to version " .. version.Version
   local message2 = "'" .. version.Changes .. "'"
 
-  gpu.set (w / 2 - message1 / 2, h / 2,     message1)
-  gpu.set (w / 2 - message2 / 2, h / 2 + 1, message2)
+  gpu.set (w / 2 - #message1 / 2, h / 2,     message1)
+  gpu.set (w / 2 - #message2 / 2, h / 2 + 1, message2)
 
   while computer.pullSignal (1) ~= "key_down" do end
 
