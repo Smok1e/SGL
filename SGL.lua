@@ -2,9 +2,11 @@
 --https://github.com/Supchik2102/SGL
 
 local component = require ("component")
-local computer = require ("computer")
-local io = require ("io")
+local computer  = require ("computer")
 
+--------------------------------------------------------------------------------
+
+if not component.isAvailable ("gpu") then error ("No available gpu found") end
 local gpu = component.gpu
 
 --------------------------------------------------------------------------------
@@ -14,8 +16,9 @@ local SGL = {Draw = {}, Gpu = {}, Debug = {}, Color = {}, Semi = {}}
 local Background, Foreground
 local Resolution = {}
 
-local Buffer = {}
-local ScreenBuffer = {}
+_G.SGLGLOBAL_Buffer       = {}
+_G.SGLGLOBAL_ScreenBuffer = {}
+_G.SGLGLOBAL_SemiBuffer   = {}
 
 local DoubleBuffering = true
 
@@ -37,7 +40,7 @@ function SGL.syncScreenBuffer ()
 
       local char, background, foreground = gpu.get (x, y)
 
-      ScreenBuffer[x][y] = {background, foreground, char}
+      _G.SGLGLOBAL_ScreenBuffer[x][y] = {background, foreground, char}
 
     end
 
@@ -309,13 +312,13 @@ end
 
 function SGL.isRectX (x, y)
 
-  local background, foreground, char = table.unpack (Buffer[x][y])
+  local background, foreground, char = table.unpack (_G.SGLGLOBAL_Buffer[x][y])
 
   for i = 0, Resolution.x - x do
 
-    if Buffer[x + i][y][1] ~= background or 
-       Buffer[x + i][y][2] ~= foreground or 
-       Buffer[x + i][y][3] ~= char then 
+    if _G.SGLGLOBAL_Buffer[x + i][y][1] ~= background or 
+       _G.SGLGLOBAL_Buffer[x + i][y][2] ~= foreground or 
+       _G.SGLGLOBAL_Buffer[x + i][y][3] ~= char then 
 
       if i == 1 then 
 
@@ -339,13 +342,13 @@ end
 
 function SGL.isRectY (x, y)
 
-  local background, foreground, char = table.unpack (Buffer[x][y])
+  local background, foreground, char = table.unpack (_G.SGLGLOBAL_Buffer[x][y])
 
   for i = 0, Resolution.y - y do
 
-    if Buffer[x][y + i][1] ~= background or 
-       Buffer[x][y + i][2] ~= foreground or 
-       Buffer[x][y + i][3] ~= char then 
+    if _G.SGLGLOBAL_Buffer[x][y + i][1] ~= background or 
+       _G.SGLGLOBAL_Buffer[x][y + i][2] ~= foreground or 
+       _G.SGLGLOBAL_Buffer[x][y + i][3] ~= char then 
 
       if i == 1 then 
 
@@ -379,7 +382,7 @@ function SGL.Display ()
 
       if DoubleBuffering then
 
-        local s, b = ScreenBuffer[x][y], Buffer[x][y] 
+        local s, b = _G.SGLGLOBAL_ScreenBuffer[x][y], _G.SGLGLOBAL_Buffer[x][y] 
 
         if s[1] ~= b[1] or 
            s[2] ~= b[2] or 
@@ -397,7 +400,7 @@ function SGL.Display ()
             
             for i = 0, rectwidth - 1 do
 
-              ScreenBuffer[x + i][y] = {Background, Foreground, b[3]}
+              _G.SGLGLOBAL_ScreenBuffer[x + i][y] = {Background, Foreground, b[3]}
 
             end
 
@@ -425,7 +428,7 @@ function SGL.Display ()
 
       else
 
-        local b = Buffer[x][y]
+        local b = _G.SGLGLOBAL_Buffer[x][y]
 
         SGL.Gpu.setBackground (b[1])
         SGL.Gpu.setForeground (b[2])
@@ -448,7 +451,7 @@ end
 
 function SGL.getCharacterFromBuffer (x, y)
 
-  return {background = Buffer[x][y][1], foreground = Buffer[x][y][2], char = Buffer[x][y][3]}
+  return {background =_G.SGLGLOBAL_Buffer[x][y][1], foreground = _G.SGLGLOBAL_Buffer[x][y][2], char = _G.SGLGLOBAL_Buffer[x][y][3]}
 
 end
 
@@ -456,7 +459,7 @@ end
 
 function SGL.getCharacterFromScreen (x, y)
 
-  return {background = Buffer[x][y][1], foreground = Buffer[x][y][2], char = Buffer[x][y][3]}
+  return {background = _G.SGLGLOBAL_Buffer[x][y][1], foreground = _G.SGLGLOBAL_Buffer[x][y][2], char = _G.SGLGLOBAL_Buffer[x][y][3]}
 
 end
 
@@ -471,9 +474,9 @@ function SGL.Draw.Character (x, y, char, background, foreground)
 
     --тебе здесь не рады
 
-    if background then Buffer[x][y][1] = background end
-    if foreground then Buffer[x][y][2] = foreground end
-    if char       then Buffer[x][y][3] = char       end
+    if background then _G.SGLGLOBAL_Buffer[x][y][1] = background end
+    if foreground then _G.SGLGLOBAL_Buffer[x][y][2] = foreground end
+    if char       then _G.SGLGLOBAL_Buffer[x][y][3] = char       end
 
     return true
 
@@ -625,11 +628,11 @@ end
 
 function SGL.Semi.Clear ()
 
-  SGL.Semi.Buffer = {}
+  _G.SGLGLOBAL_SemiBuffer = {}
 
   for x = 1, Resolution.x do
     
-    SGL.Semi.Buffer[x] = {}
+    _G.SGLGLOBAL_SemiBuffer[x] = {}
 
   end
 
@@ -646,7 +649,7 @@ function SGL.Semi.Set (x, y, color)
 
   if x <= Resolution.x and x > 0 and y <= Resolution.y * 2 and y > 0 then
 
-    SGL.Semi.Buffer[x][y] = color
+    _G.SGLGLOBAL_SemiBuffer[x][y] = color
 
   end
 
@@ -658,7 +661,7 @@ end
 
 function SGL.Semi.Draw ()
 
-  local Buff = SGL.Semi.Buffer
+  local Buff = _G.SGLGLOBAL_SemiBuffer
 
   for x = 1, Resolution.x do
 
@@ -669,8 +672,8 @@ function SGL.Semi.Draw ()
 
       if top or bottom then
 
-        top =    top    or Buffer[x][math.ceil (y / 2)][1]
-        bottom = bottom or Buffer[x][math.ceil (y / 2)][1]
+        top =    top    or _G.SGLGLOBAL_Buffer[x][math.ceil (y / 2)][1]
+        bottom = bottom or _G.SGLGLOBAL_Buffer[x][math.ceil (y / 2)][1]
 
         SGL.Draw.Semipixel (x, math.ceil (y / 2), top, bottom)
 
@@ -748,15 +751,15 @@ function SGL.Init ()
 
   for x = 1, Resolution.x do
 
-    ScreenBuffer[x] = {}
-    Buffer      [x] = {}
+    _G.SGLGLOBAL_ScreenBuffer[x] = {}
+    _G.SGLGLOBAL_Buffer      [x] = {}
 
     for y = 1, Resolution.y do
 
       local char, foreground, background = gpu.get (x, y)
 
-      ScreenBuffer[x][y] = {background, foreground, char}
-      Buffer      [x][y] = {background, foreground, char}
+      _G.SGLGLOBAL_ScreenBuffer[x][y] = {background, foreground, char}
+      _G.SGLGLOBAL_Buffer      [x][y] = {background, foreground, char}
 
     end
 
