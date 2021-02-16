@@ -129,8 +129,8 @@ local function MoveLines ()
       point.x = point.x + point.vx
       point.y = point.y + point.vy
 
-      if point.x <= 1 or point.x >= w then point.vx = -point.vx end
-      if point.y <= 1 or point.y >= h then point.vy = -point.vy end
+      if point.x <= 1 or point.x >= w     then point.vx = -point.vx end
+      if point.y <= 1 or point.y >= h * 2 then point.vy = -point.vy end
 
     end
 
