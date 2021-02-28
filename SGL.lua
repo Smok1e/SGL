@@ -626,6 +626,19 @@ end
 
 --------------------------------------------------------------------------------
 
+function SGL.Color.Interpolate (a, b, t)
+
+  local ar, ag, ab = SGL.Color.Extract (a)
+  local br, bg, bb = SGL.Color.Extract (b)
+
+  return SGL.Color.Pack (math.floor (ar + (br - ar) * t), 
+                         math.floor (ag + (bg - ag) * t), 
+                         math.floor (ab + (bb - ab) * t))
+
+end
+
+--------------------------------------------------------------------------------
+
 function SGL.Semi.Clear ()
 
   _G.SGLGLOBAL_SemiBuffer = {}
