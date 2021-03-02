@@ -310,6 +310,17 @@ end
 
 --------------------------------------------------------------------------------
 
+function SGL.Clamp (value, min, max)
+
+  if value < min then value = min end
+  if value > max then value = max end
+
+  return value
+
+end
+
+--------------------------------------------------------------------------------
+
 function SGL.isRectX (x, y)
 
   local background, foreground, char = table.unpack (_G.SGLGLOBAL_Buffer[x][y])
@@ -606,6 +617,8 @@ end
 
 function SGL.Color.Pack (r, g, b)
 
+  r, g, b = Clamp (r, 0, 255), Clamp (g, 0, 255), Clamp (b, 0, 255)
+
   return (r *(256^2)) + (g * 256) + b
 
 end
@@ -627,6 +640,8 @@ end
 --------------------------------------------------------------------------------
 
 function SGL.Color.Interpolate (a, b, t)
+
+  t = SGL.Clamp (t, 0, 1)
 
   local ar, ag, ab = SGL.Color.Extract (a)
   local br, bg, bb = SGL.Color.Extract (b)
