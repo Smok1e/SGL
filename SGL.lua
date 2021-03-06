@@ -24,7 +24,7 @@ local DoubleBuffering = true
 
 local LastDisplayTime = 0
 
-local StartTime = computer.uptime () //саня лох
+local StartTime = computer.uptime () --саня лох
 
 --------------------------------------------------------------------------------
 
@@ -90,7 +90,7 @@ function SGL.Gpu.setBackground (color)
 
     if gpu.getBackground () ~= Background then
   
-      gpu.setBackground (Background) //хуй
+      gpu.setBackground (Background) --хуй
 
       return true
 
@@ -138,7 +138,7 @@ end
 
 --------------------------------------------------------------------------------
 
-function SGL.Gpu.getForeground ()//пизда
+function SGL.Gpu.getForeground ()--пизда
 
   return Foreground
 
@@ -266,6 +266,8 @@ end
 
 function SGL.getDisplayTime ()
 
+  --говно
+  
   local DisplayTime = math.floor (LastDisplayTime * 100) / 100
 
   if DisplayTime <= 0 then DisplayTime = 0.01 end
