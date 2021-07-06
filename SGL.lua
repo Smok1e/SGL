@@ -1,5 +1,5 @@
 --Simple Graphic Library by @Smok1e--
---https://github.com/Supchik2102/SGL
+--https://github.com/Smok1e/SGL
 
 local component = require ("component")
 local computer  = require ("computer")
