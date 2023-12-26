@@ -16,8 +16,8 @@ local internet = component.internet
 
 ------------------------------------------------
 
-local SGL_URL         = "https://raw.githubusercontent.com/Supchik2102/SGL/master/SGL.lua"
-local SGL_VERSION_URL = "https://raw.githubusercontent.com/Supchik2102/SGL/master/SGL_Version.lua"
+local SGL_URL         = "https://raw.githubusercontent.com/Smok1e/SGL/master/SGL.lua"
+local SGL_VERSION_URL = "https://raw.githubusercontent.com/Smok1e/SGL/master/SGL_Version.lua"
 
 local SGL_INSTALL_PATH         = "/lib/SGL.lua"
 local SGL_VERSION_INSTALL_PATH = "/lib/SGL_Version.lua"
